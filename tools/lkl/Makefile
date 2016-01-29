@@ -13,8 +13,8 @@ OUTPUT_FORMAT=$(shell $(LD) -r -print-output-format)
 
 TEST_TARGETS=test valgrind gdb
 
-lib_source = $(filter-out %-host.c,$(wildcard lib/*.c))
-source = $(wildcard tests/*.c)
+lib_source = $(filter-out %-host.c,$(wildcard lib/*.c)) tests/test-common.c
+source = tests/boot.c
 lib = lib/liblkl.a
 ifneq (,$(filter $(OUTPUT_FORMAT),elf64-x86-64 elf32-i386 elf64-x86-64-freebsd))
 source += $(wildcard *.c)
@@ -36,15 +36,17 @@ ifneq (,$(filter $(OUTPUT_FORMAT),elf64-x86-64 elf64-x86-64-freebsd))
 CFLAGS += -D_FILE_OFFSET_BITS=64
 endif
 
+ifeq ($(OUTPUT_FORMAT),elf64-x86-64)
+	lib += lib/liblkl-hijack.so
+	hijack_objs = $(patsubst %.c,%.o,$(wildcard lib/hijack/*.c))
+	objs += $(hijack_objs)
+	source += tests/hijack.c 
+endif
+
 lib_objs = $(patsubst %.c,%.o, $(lib_source))
 objs = $(patsubst %.c,%.o, $(source))
 execs += $(patsubst %.c,%, $(source))
 
-ifeq ($(OUTPUT_FORMAT),elf64-x86-64)
-lib += lib/liblkl-hijack.so
-hijack_objs = $(patsubst %.c,%.o,$(wildcard lib/hijack/*.c))
-objs += $(hijack_objs)
-endif
 
 all: $(lib) $(execs)
 
@@ -62,6 +64,9 @@ lib/liblkl-hijack.so: $(hijack_objs) Makefile lib/liblkl.so
 lib/lkl.o:
 	$(MAKE) -C ../.. ARCH=lkl defconfig
 	$(MAKE) -C ../.. ARCH=lkl $(KOPT) install INSTALL_PATH=$(PWD)
+
+$(filter test/%,$(execs)): $@.o tests/test-common.o
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 %: %.o
 	$(CC) -o $@ $^ $(LDFLAGS)
