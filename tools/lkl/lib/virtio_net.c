@@ -89,7 +89,7 @@ int lkl_netdev_add(union lkl_netdev nd, void *mac)
 	static int count;
 	int ret = -LKL_ENOMEM;
 
-	dev = lkl_host_ops.mem_alloc(sizeof(*dev));
+	dev = lkl_host_ops.mem_alloc(sizeof(struct virtio_net_dev));
 	if (!dev)
 		return -LKL_ENOMEM;
 
