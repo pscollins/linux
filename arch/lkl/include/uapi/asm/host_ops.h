@@ -26,6 +26,7 @@
  *
  * @mem_alloc - allocate memory
  * @mem_free - free memory
+ * @mem_calloc - allocate and zero-out memory
  *
  * @timer_create - allocate a host timer that runs fn(arg) when the timer
  * fires.
@@ -56,6 +57,7 @@ struct lkl_host_operations {
 
 	void* (*mem_alloc)(unsigned long);
 	void (*mem_free)(void *);
+	void* (*mem_calloc)(unsigned long nmemb, unsigned long size);
 
 	unsigned long long (*time)(void);
 
