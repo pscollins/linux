@@ -150,6 +150,12 @@ const char *lkl_strerror(int err)
 	return lkl_err_strings[err];
 }
 
+void lkl_perror(char *msg, int err)
+{
+	const char *err_msg = lkl_strerror(err);
+	lkl_printf("%s: %s\n", msg, err_msg);
+}
+
 int lkl_printf(const char *fmt, ...)
 {
 	char *buffer;
