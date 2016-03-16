@@ -26,7 +26,7 @@ test:
   override:
     - cd tools/lkl && make clean:
         parallel: true
-    - cd tools/lkl && if [ $CIRCLE_NODE_INDEX -eq 0]; then ./scripts/dpdk-sdk-build.sh; fi:
+    - if [[ $CIRCLE_NODE_INDEX -eq 0]]; then cd tools/lkl && ./scripts/dpdk-sdk-build.sh; fi:
         parallel: true
     - cd tools/lkl &&  make -j8 ${MKARG}:
         parallel: true
