@@ -5,32 +5,50 @@ general:
 machine:
   # Add some environment variables
   environment:
-    CROSS_COMPILE: $(case $CIRCLE_NODE_INDEX in 0) host='' ;; 1) host='i686-w64-mingw32-' ;; 2) host='arm-linux-androideabi-' ;; esac; echo $host)
-    MKARG: $(case $CIRCLE_NODE_INDEX in 0) mkarg='dpdk=yes' ;; 1) host='i686-w64-mingw32-' ;; 2) host='arm-linux-androideabi-' ;; esac; echo $mkarg)
+    IS_LINUX: $([[ $CIRCLE_NODE_INDEX -eq 0 ]] && echo "y")
+    IS_WIN32: $([[ $CIRCLE_NODE_INDEX -eq 1 ]] && echo "y")
+    IS_ARM: $([[ $CIRCLE_NODE_INDEX -eq 2 ]] & echo "y")
+    CROSS_COMPILE: >
+      $(case $CIRCLE_NODE_INDEX in 
+          1) host='i686-w64-mingw32-' ;; 
+          2) host='arm-linux-androideabi-' ;; 
+        esac; 
+        echo $host)
+    MKARG: $([ $IS_LINUX ] && echo 'dpdk=yes')
     PATH: /home/ubuntu/android-toolchain/bin:${PATH}
+    SETUP_WIN32: $([ $IS_WIN32 ] && echo 'sudo cp tools/lkl/bin/i686-w64-mingw32-* /usr/bin')
+    SETUP_ARM: >
+      $([ $IS_ARM ] && echo 
+          '/usr/local/android-ndk/build/tools/make-standalone-toolchain.sh 
+          --platform=android-21 --install-dir=/home/ubuntu/android-toolchain --arch=arm && 
+          cd tools/lkl &&
+          make tests/boot-in.o &&
+          arm-linux-androideabi-gcc -o tests/boot tests/boot-in.o liblkl.a -static')
+    SETUP_LINUX: $([ $IS_LINUX ] && echo 'cd tools/lkl && ./scripts/dpdk-sdk-build.sh')
+    COMMON_DEPS: > 
+        bc libfuse-dev libarchive-dev xfsprogs valgrind qemu-user-static 
+        linux-headers-$(uname -r)
+    WIN_DEPS: $( [ $IS_WIN32 ] && echo 'gcc-mingw-w64-i686 wine')
+    
 
 ## Customize dependencies
 dependencies:
   pre:
     # required for 14.04 container
     # - sudo dpkg --add-architecture i386
-    - sudo apt-get update; sudo apt-get install bc libfuse-dev libarchive-dev xfsprogs valgrind gcc-mingw-w64-i686 wine qemu-user-static linux-headers-$(uname -r)
-    - /usr/local/android-ndk/build/tools/make-standalone-toolchain.sh --platform=android-21 --install-dir=/home/ubuntu/android-toolchain --arch=arm
-
+    - sudo apt-get update; sudo apt-get install $COMMON_DEPS $WIN_DEPS
 
 test:
   pre:
-    - sudo cp tools/lkl/bin/i686-w64-mingw32-* /usr/bin:
+    - "$SETUP_ARM":
+        parallel: true
+    - [ $IS_LINUX ] && cd tools/lkl && ./scripts/dpdk-sdk-build.sh; fi
+        parallel: true
+    - if [ $IS_WIN32 ]; then sudo cp tools/lkl/bin/i686-w64-mingw32-* /usr/bin; fi
         parallel: true
 
   override:
-    - cd tools/lkl && make clean:
-        parallel: true
-    - cd tools/lkl && ./scripts/dpdk-sdk-build.sh:
-        parallel: true
     - cd tools/lkl &&  make -j8 ${MKARG}:
-        parallel: true
-    - cd tools/lkl && if [ $CIRCLE_NODE_INDEX -eq 2 ] ; then make tests/boot-in.o; arm-linux-androideabi-gcc -o tests/boot tests/boot-in.o liblkl.a -static ; fi:
         parallel: true
     - cd tools/lkl && make test:
          parallel: true
