@@ -7,6 +7,7 @@ machine:
   environment:
     CROSS_COMPILE: $(case $CIRCLE_NODE_INDEX in 1) host='i686-w64-mingw32-' ;; 2) host='arm-linux-androideabi-' ;; esac; echo $host)
     MKARG: $([[ $CIRCLE_NODE_INDEX -eq 0 ]] && echo 'dpdk=yes')
+    DPDK: $(case $CIRCLE_NODE_INDEX -eq 0 in 0) cmd="./scripts/dpdk-sdk-build.sh" ;; *) cmd="echo 'skipping dpdk'" ;; esac; echo $cmd)
     PATH: /home/ubuntu/android-toolchain/bin:${PATH}
 
 ## Customize dependencies
@@ -15,7 +16,7 @@ dependencies:
     # required for 14.04 container
     # - sudo dpkg --add-architecture i386
     - sudo apt-get update; sudo apt-get install bc libfuse-dev libarchive-dev xfsprogs gcc-mingw-w64-i686 wine qemu-user-static linux-headers-$(uname -r)
-    - if [[ $CIRCLE_NODE_INDEX -eq 2 ]]; then /usr/local/android-ndk/build/tools/make-standalone-toolchain.sh --platform=android-21 --install-dir=/home/ubuntu/android-toolchain --arch=arm; fi
+    - if [[ $CIRCLE_NODE_INDEX -eq 2 ]] ; then /usr/local/android-ndk/build/tools/make-standalone-toolchain.sh --platform=android-21 --install-dir=/home/ubuntu/android-toolchain --arch=arm; fi
 
 
 test:
@@ -26,7 +27,7 @@ test:
   override:
     - cd tools/lkl && make clean:
         parallel: true
-    - if [[ $CIRCLE_NODE_INDEX -eq 0]]; then cd tools/lkl && ./scripts/dpdk-sdk-build.sh; fi:
+    - cd tools/lkl && $DPDK:
         parallel: true
     - cd tools/lkl &&  make -j8 ${MKARG}:
         parallel: true
