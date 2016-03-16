@@ -97,7 +97,7 @@ static void *tls_get(unsigned int key)
 	if (GetLastError() == ERROR_SUCCESS)
 		return ret;
 	else
-		panic();
+		assert(0);
 
 	/* return TlsGetValue(key); */
 }
