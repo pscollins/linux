@@ -6,9 +6,9 @@ machine:
   # Add some environment variables
   environment:
     CROSS_COMPILE: $(case $CIRCLE_NODE_INDEX in 1) host='i686-w64-mingw32-' ;; 2) host='arm-linux-androideabi-' ;; esac; echo $host)
-    MKARG: [[ $CIRCLE_NODE_INDEX -eq 0 ]] && echo 'dpdk=yes'
+    MKARG: $([[ $CIRCLE_NODE_INDEX -eq 0 ]] && echo 'dpdk=yes')
     PATH: /home/ubuntu/android-toolchain/bin:${PATH}
-    VALGRIND: [[ -n "${RUN_NIGHTLY_BUILD}" ]] && echo "valgrind"
+    VALGRIND: $([[ -n "${RUN_NIGHTLY_BUILD}" ]] && echo "valgrind")
 
 ## Customize dependencies
 dependencies:
