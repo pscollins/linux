@@ -34,7 +34,8 @@ void __init setup_arch(char **cl)
 
 int run_init_process(const char *init_filename)
 {
-	initial_syscall_thread(init_sem);
+	if (initial_syscall_thread(init_sem))
+		lkl_ops->panic();
 
 	kernel_halt();
 
