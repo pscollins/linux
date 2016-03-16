@@ -93,7 +93,13 @@ static int tls_set(unsigned int key, void *data)
 
 static void *tls_get(unsigned int key)
 {
-	return TlsGetValue(key);
+	void *ret = TlsGetValue(key);
+	if (GetLastError() == ERROR_SUCCESS)
+		return ret;
+	else
+		panic();
+
+	/* return TlsGetValue(key); */
 }
 
 
