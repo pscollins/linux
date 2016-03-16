@@ -16,7 +16,7 @@ dependencies:
     # required for 14.04 container
     # - sudo dpkg --add-architecture i386
     - sudo apt-get update; sudo apt-get install bc libfuse-dev libarchive-dev xfsprogs $VALGRIND gcc-mingw-w64-i686 wine qemu-user-static linux-headers-$(uname -r)
-    - [[ $CIRCLE_NODE_INDEX -eq 2 ]] && /usr/local/android-ndk/build/tools/make-standalone-toolchain.sh --platform=android-21 --install-dir=/home/ubuntu/android-toolchain --arch=arm
+    - if [[ $CIRCLE_NODE_INDEX -eq 2 ]]; then /usr/local/android-ndk/build/tools/make-standalone-toolchain.sh --platform=android-21 --install-dir=/home/ubuntu/android-toolchain --arch=arm; fi
 
 
 test:
